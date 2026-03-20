@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GSTIN Validator & Fake Company Detector</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<h1>GSTIN Validator & Fake Company Detector</h1>
+  <p style="text-align: center; color: #666;">Enter a GSTIN to check against expanded mock data (IT + Madurai/TN transport). Matches show valid with info.</p>
+  
+  <form id="gstinForm">
+    <label for="gstin">Enter GSTIN (15 chars):</label>
+    <input type="text" id="gstin" placeholder="33AACCT0883D1ZN" maxlength="15" required>
+    <button type="submit">Validate</button>
+  </form>
+  
+  <div id="result" style="display: none;"></div>
+  
+  <div id="recent-searches" style="display: none;">
+    <h3>Recent Searches (Last 5)</h3>
+    <div id="recent-list"></div>
+  </div>
+
+  <script>
+    const companies = [
+      {gstin: "33AAACT2838H1ZL", name: "Tata Consultancy Services", info: "Verified via GST portal; OMR office", address: "456 Anna Salai, Teynampet, Chennai - 600018"},
+      {gstin: "33AAACD3312M6ZV", name: "Cognizant Technology Solutions India Pvt Ltd", info: "IT services giant, Chennai knowyourgst", address: "SDB4 1 to 14 flrs, Madras Export Processing (MEPZ-SIP cot)"},
+      {gstin: "33AAACL1681P3Z8", name: "LTIMindtree Limited", info: "IT consulting, merger of LTI & Mindtree piceapp", address: "Chennai registered"},
+      {gstin: "33AAECI2431E2Z5", name: "Information Technology (Intlosol Works Pvt Ltd)", info: "Private Ltd, registered Jul 2017 piceapp", address: "Chennai"},
+      {gstin: "33AAACC1756E2Z5", name: "TLG India Private Limited", info: "Chennai-based IT microvistatech", address: "Ground & First Floor, Old No 119 New No 269 Rayana Square, TTK Road, Alwarpet"},
+      {gstin: "33AAACP6597N1ZT", name: "Best IT World India Pvt Ltd", info: "Private Ltd, registered Jul 2017 microvistatech", address: "2nd and 3rd Floor, 50/68 Leader Palace, Swamy Pandaram Street, Chintadripet, Chennai-600002"},
+      {gstin: "33AAACN0500F2ZC", name: "Newgen Software Technologies Limited", info: "Public Ltd, active returns scribd", address: "D-17, Plot No.13, 4th Main Road, SIPCOT IT Park, Siruseri, Chennai-603103"},
+      {gstin: "33AAACF2351C1ZE", name: "Financial Software Systems P Ltd", info: "Software development microvistatech", address: "Ground Floor, No.42 Sharada Apartment, 3rd Main Road, Gandhi Nagar, Adyar, Chennai-600020"},
+      {gstin: "33AAACI8904N1ZD", name: "Firstsource Solutions Ltd", info: "BPO/IT services knowyourgst", address: "ETA Technopark Block 4 5th Floor 33, Old Mahabalipuram Road, Chingleput"},
+      {gstin: "33BGNPM0445F1ZL", name: "Sun Computers (Akkini Murugan Prop.)", info: "Retail IT, active gstzen", address: "Madurai jurisdiction"},
+      {gstin: "33AADCC3694E1ZU", name: "Shyam Spectra Pvt Ltd (TN)", info: "Tech/IT spectra", address: "Chennai-600034 area"},
+      {gstin: "33AAACE4809L2ZO", name: "Electronics Corporation of India Ltd", info: "IT/electronics microvistatech", address: "Chennai"},
+      {gstin: "33AACCT0883D1ZN", name: "Tamil Nadu State Transport Corporation (Madurai) Ltd", info: "Government STU, public limited", address: "18 Bye Pass Road, Madurai Railway Colony, Madurai-625010"},
+      {gstin: "33AAJCM0143Q1ZB", name: "Madurai Trans Carrier Limited", info: "Cargo carrier", address: "Auras Corporate, 98 A Dr Radhakrishnan Salai, Mylapore (Madurai ops)"},
+      {gstin: "33AAXPS4651E2ZB", name: "Gokul Transport Company", info: "Proprietorship, active returns", address: "178/1-A, Madurai Main Road, Nagamangalam, Tiruchirappalli (Madurai routes)"},
+      {gstin: "33ABAFM3776E1ZG", name: "Madurai Radha Logistics", info: "Local logistics firm", address: "9 West Avani Moola Street, Madurai-625001"},
+      {gstin: "33BEVPM9090Q1ZB", name: "Sri Lakshmi Transport", info: "Proprietorship, registered 2017", address: "Madurai area (specific not listed)"},
+      {gstin: "33AAACV9246D1Z5", name: "TNSTC - Villupuram Division", info: "Government transport, Villupuram HQ, Madurai routes", address: "Villupuram Bus Stand Complex, NH45, Villupuram-605602"},
+      {gstin: "33AAACK5437R1ZQ", name: "KPN Travels India Pvt Ltd", info: "Private bus operator, premium AC services", address: "No. 10, GST Road, Chrompet, Chennai-600044 (Madurai depot)"},
+      {gstin: "33AAECP6025C1Z4", name: "Parveen Travels Pvt Ltd", info: "Long-distance luxury buses, Madurai-Chennai", address: "Parveen Towers, 711A, Anna Salai, Chennai-600002"},
+      {gstin: "33AAACT1140D1Z1", name: "SETC - State Express Transport Corporation", info: "TN Govt premium services, statewide", address: "Pallavan Illam, 288, Anna Salai, Chennai-600006"},
+      {gstin: "33AAGCS6890Q1ZJ", name: "SRS Travels (India) Pvt Ltd - TN Branch", info: "Interstate buses, Madurai terminal", address: "Madurai Bypass, Near Meenakshi Temple"},
+      {gstin: "33AAFCV3730P1ZM", name: "Royal Roadways", info: "Madurai-based cargo and passenger", address: "No. 45, Periyar Bus Stand Road, Madurai-625001"},
+      {gstin: "33ABMPR2676G1Z8", name: "Pothys Roadways", info: "Textile group transport arm, intra-TN", address: "Pothys Complex, Madurai"},
+      {gstin: "33AACCM1819K1Z0", name: "Metro Transports", info: "Urban and mofussil services, Madurai", address: "Arappalayam Bus Stand, Madurai-625016"},
+      {gstin: "33AAKCS4709D1Z2", name: "Southern Roadways Ltd", info: "Government undertaking, Madurai division", address: "Tirunelveli Road, Madurai"},
+      {gstin: "33AABCU6142Q1ZN", name: "VRL Logistics Ltd - Madurai", info: "Pan-India cargo, strong TN presence", address: "Sy No 1/1B, Mattuthavani, Madurai-625007"}
+    ];
+
+    const form = document.getElementById('gstinForm');
+    const resultDiv = document.getElementById('result');
+    const recentDiv = document.getElementById('recent-searches');
+    const recentList = document.getElementById('recent-list');
+    const gstinInput = document.getElementById('gstin');
+
+    // Recent searches functions
+    const RECENT_KEY = 'recentGstinSearches';
+    function getRecentSearches() {
+      return JSON.parse(localStorage.getItem(RECENT_KEY)) || [];
+    }
+
+    function saveRecentSearch(gstin, company) {
+      let recent = getRecentSearches();
+      recent = recent.filter(r => r.gstin !== gstin);
+      recent.unshift({ gstin, name: company.name });
+      recent = recent.slice(0, 5);
+      localStorage.setItem(RECENT_KEY, JSON.stringify(recent));
+      displayRecentSearches();
+    }
+
+    function displayRecentSearches() {
+      const recent = getRecentSearches();
+      if (recent.length === 0) {
+        recentDiv.style.display = 'none';
+        return;
+      }
+      recentDiv.style.display = 'block';
+      recentList.innerHTML = recent.map(item => 
+        `<div class="recent-item">
+          <span onclick="gstinInput.value='${item.gstin}'; gstinInput.focus(); resultDiv.style.display='none';">${item.gstin}</span> - ${item.name}
+        </div>`
+      ).join('');
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const gstin = gstinInput.value.trim().toUpperCase().replace(/\s/g, '');
+      console.log('Normalized GSTIN:', gstin);
+      console.log('Companies loaded:', companies.length); 
+      
+      if (gstin.length !== 15) {
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = `
+          <div class="invalid">❌ Invalid Format</div>
+          <p>GSTIN must be 15 chars. Example: 33AACCT0883D1ZN</p>
+        `;
+        return;
+      }
+      
+      const company = companies.find(c => c.gstin === gstin);
+      console.log('Found company:', company);
+
+      resultDiv.style.display = 'block';
+      
+      if (company) {
+        saveRecentSearch(gstin, company);
+        resultDiv.innerHTML = `
+          <div class="valid">✅ VALID GSTIN</div>
+          <div class="company-info">
+            <h3>${company.name}</h3>
+            <p><strong>Info:</strong> ${company.info}</p>
+            <p><strong>GSTIN:</strong> ${company.gstin}</p>
+            <p><strong>Address:</strong> ${company.address}</p>
+          </div>
+          <button onclick="showCompanyPopup('${company.gstin}', '${company.name}', '${company.info}', '${company.address}')">Details →</button>
+        `;
+        // Beep + voice (existing code)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx) {
+          const oscillator = audioCtx.createOscillator();
+          const gainNode = audioCtx.createGain();
+          oscillator.connect(gainNode);
+          gainNode.connect(audioCtx.destination);
+          oscillator.frequency.value = 800;
+          oscillator.type = 'sine';
+          gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+          oscillator.start(audioCtx.currentTime);
+          oscillator.stop(audioCtx.currentTime + 0.3);
+        }
+        if ('speechSynthesis' in window) {
+          const text = `Valid company ${company.name}. GSTIN ${company.gstin}.`;
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = 'en-US';
+          utterance.rate = 0.9;
+          utterance.pitch = 1.2;
+          const voices = speechSynthesis.getVoices();
+          const femaleVoice = voices.find(v => v.name.toLowerCase().includes('female') || v.name.includes('Zira'));
+          if (femaleVoice) utterance.voice = femaleVoice;
+          speechSynthesis.speak(utterance);
+        }
+      } else {
+        resultDiv.innerHTML = `
+          <div class="invalid">❌ NO MATCH</div>
+          <p>Not in 28-company dataset. Try 33AACCT0883D1ZN or F12 console.</p>
+        `;
+      }
+    });
+
+    gstinInput.addEventListener('input', () => resultDiv.style.display = 'none');
+
+    function showCompanyPopup(gstin, name, info, address) {
+      const popup = document.createElement('div');
+      popup.style.cssText = `
+        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        background: rgba(255,255,255,0.95); backdrop-filter: blur(20px);
+        padding: 40px; border-radius: 25px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        z-index: 1000; max-width: 500px; text-align: center; color: #333;
+        font-family: 'Poppins', sans-serif;
+      `;
+      popup.innerHTML = `
+        <h2 style="color: black;">🎉 ${name}</h2>
+        <p><strong>GSTIN:</strong> ${gstin}</p><p><strong>Info:</strong> ${info}</p><p><strong>Address:</strong> ${address}</p>
+        <p style="color: #4caf50; font-weight: 600;">✅ Verified! Great opportunities.</p>
+        <button onclick="this.parentElement.remove(); document.getElementById('popupOverlay')?.remove();" 
+                style="padding: 12px 24px; background: #4caf50; color: white; border: none; border-radius: 25px; font-size: 16px; cursor: pointer;">Close</button>
+      `;
+      document.body.appendChild(popup);
+      const overlay = document.createElement('div');
+      overlay.id = 'popupOverlay';
+      overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 999;';
+      document.body.appendChild(overlay);
+    }
+
+    displayRecentSearches();
+  </script>
+</body>
+</html>
